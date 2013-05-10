@@ -86,6 +86,7 @@ public class AccessibleVariableSearcher extends ASTVisitor {
 		currentField.pop();
 		super.endVisit(node);
 	}
+	
 	@Override
 	public final boolean visit(final FieldDeclaration node) {
 		for (Object o : node.fragments()) {

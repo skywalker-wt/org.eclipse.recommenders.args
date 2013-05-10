@@ -1,0 +1,24 @@
+## no archives
+*.jar
+*.zip
+*.gz
+
+## no derived resources
+*.class
+bin/
+bn_files*/
+target/
+.recommenders/
+aggregators/
+screenshots/
+
+## various other file types we don't want to have in the repository:
+.DS_Store
+*~
+*#
+*.licensed
+*.aux
+*_trace
+
+/plugins/org.eclipse.recommenders.mining/
+/tests/org.eclipse.recommenders.tests.mining/
