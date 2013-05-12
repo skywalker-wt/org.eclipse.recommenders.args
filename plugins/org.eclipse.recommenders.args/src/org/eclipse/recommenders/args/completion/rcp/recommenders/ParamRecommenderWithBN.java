@@ -318,6 +318,7 @@ public class ParamRecommenderWithBN implements IParamRecommender {
 		String paramStr = paramInfo.getParamStr();
 		int classDelimiterPos = paramStr.indexOf(":");
 		BaseVariable baseVar = instanceInfo.getBaseVar();
+		
 		if (paramInfo.getStructureType().equals("MethodInvocation")) {
 			concretizeMajorStructures(classDelimiterPos, paramInfo, baseVar, 
 					paramStr, freq, "MethodInvocation", paramStr2Freq, paramStr2Info);
@@ -325,12 +326,47 @@ public class ParamRecommenderWithBN implements IParamRecommender {
 			concretizeMajorStructures(classDelimiterPos, paramInfo, baseVar, 
 					paramStr, freq, "QualifiedName", paramStr2Freq, paramStr2Info);
 		} else if (paramInfo.getStructureType().equals("ArrayAccess")) {
+			concretizeArrayAccess(paramStr2Freq, paramStr2Info, freq,
+					paramInfo, paramStr, baseVar);	
+		} else if (paramInfo.getStructureType().equals("CastExpression")) {
+			concretizeCastExpr(paramStr2Freq, paramStr2Info, freq, paramInfo,
+					paramStr, baseVar);
+		} else { // other types of structures
+			if (baseVar != null) {
+				return;
+			}
+			updateParamMaps(paramStr, freq, paramInfo, paramStr2Freq, paramStr2Info);
+		}
+	}
+
+	/**
+	 * Concretize parameters of type CastExpression and update the maps accordingly.
+	 * 
+	 * @param paramStr2Freq - map between parameter string and its frequency.
+	 * @param paramStr2Info - map between parameter string and its detailed information.
+	 * @param freq - frequency of the current parameter
+	 * @param paramInfo - abstract information of the parameter
+	 * @param paramStr - string representation of the parameter
+	 * @param baseVar - base variable of the parameter
+	 */
+	private void concretizeCastExpr(final Map<String, Double> paramStr2Freq,
+			final Map<String, ParamInfo> paramStr2Info, final Double freq,
+			final ParamInfo paramInfo, final String paramStr, final BaseVariable baseVar) {
+		int namePos = paramStr.indexOf(")");
+		if (namePos != -1) {
+			// TODO: test this statement carefully, because it really looks buggy...
+			String className = paramStr.substring(namePos + 1, paramStr.length());
 			if (baseVar != null) {
 				if (baseVar.getType() != null 
-						&& baseVar.getType().getErasure().getQualifiedName().equals(paramStr)) {
-					paramStr = baseVar.getName() + "[]";
+						&& baseVar.getType().getErasure().getQualifiedName().equals(className)) {
+					String pStr = paramStr.substring(0, namePos + 1) + baseVar.getName();
 					
-					updateParamMaps(paramStr, freq, paramInfo, paramStr2Freq, paramStr2Info);
+					updateParamMaps(pStr, freq, paramInfo, paramStr2Freq, paramStr2Info);
+				} else if (baseVar.getType() != null 
+						&& baseVar.getType().getErasure().getQualifiedName().equals(className + "[]")) {
+					String pStr = paramStr.substring(0, namePos + 1) + baseVar.getName() + "[]";
+					
+					updateParamMaps(pStr, freq, paramInfo, paramStr2Freq, paramStr2Info);
 				} else {
 					return;
 				}
@@ -341,12 +377,19 @@ public class ParamRecommenderWithBN implements IParamRecommender {
 						continue;
 					}
 					
-					if (local.resolveTypeBinding().getErasure().getQualifiedName().equals(paramStr)) {
+					if (local.resolveTypeBinding().getErasure().getQualifiedName().equals(className)) {
 						if (local instanceof SimpleName) {
 							SimpleName tmp = (SimpleName) local;
 							String newParam;
-							newParam = tmp.getIdentifier() + "[]";
-							
+							newParam = paramStr.substring(0, namePos + 1) + tmp.getIdentifier();
+							updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
+						}
+					} else if (local.resolveTypeBinding()
+								.getErasure().getQualifiedName().equals(className + "[]")) {
+						if (local instanceof SimpleName) {
+							SimpleName tmp = (SimpleName) local;
+							String newParam;
+							newParam = paramStr.substring(0, namePos + 1) + tmp.getIdentifier() + "[]";	
 							updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
 						}
 					}
@@ -354,76 +397,70 @@ public class ParamRecommenderWithBN implements IParamRecommender {
 				
 				for (int k = 0; k < hierarchyField.size(); k++) {
 					IVariableBinding var = hierarchyField.get(k);
-					if (var.getType().getErasure().getQualifiedName().equals(paramStr)) {
+					if (var.getType().getErasure().getQualifiedName().equals(className)) {
 						String newParam;
-						newParam = var.getName() + "[]";
-						
+						newParam = paramStr.substring(0, namePos + 1) + var.getName();
 						updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
-					}	
-				}
-			}	
-		} else if (paramInfo.getStructureType().equals("CastExpression")) {
-			int namePos = paramStr.indexOf(")");
-			if (namePos != -1) {
-				String className = paramStr.substring(namePos + 1, paramStr.length());
-				if (baseVar != null) {
-					if (baseVar.getType() != null 
-							&& baseVar.getType().getErasure().getQualifiedName().equals(className)) {
-						paramStr = paramStr.substring(0, namePos + 1) + baseVar.getName();
-						
-						updateParamMaps(paramStr, freq, paramInfo, paramStr2Freq, paramStr2Info);
-					} else if (baseVar.getType() != null 
-							&& baseVar.getType().getErasure().getQualifiedName().equals(className + "[]")) {
-						paramStr = paramStr.substring(0, namePos + 1) + baseVar.getName() + "[]";
-						
-						updateParamMaps(paramStr, freq, paramInfo, paramStr2Freq, paramStr2Info);
-					} else {
-						return;
-					}
-				} else {
-					for (int j = 0; j < locals.size(); j++) {
-						Name local = locals.get(j);
-						if (local.resolveTypeBinding() == null) {
-							continue;
-						}
-						
-						if (local.resolveTypeBinding().getErasure().getQualifiedName().equals(className)) {
-							if (local instanceof SimpleName) {
-								SimpleName tmp = (SimpleName) local;
-								String newParam;
-								newParam = paramStr.substring(0, namePos + 1) + tmp.getIdentifier();
-								updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
-							}
-						} else if (local.resolveTypeBinding()
-									.getErasure().getQualifiedName().equals(className + "[]")) {
-							if (local instanceof SimpleName) {
-								SimpleName tmp = (SimpleName) local;
-								String newParam;
-								newParam = paramStr.substring(0, namePos + 1) + tmp.getIdentifier() + "[]";	
-								updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
-							}
-						}
-					}
-					
-					for (int k = 0; k < hierarchyField.size(); k++) {
-						IVariableBinding var = hierarchyField.get(k);
-						if (var.getType().getErasure().getQualifiedName().equals(className)) {
-							String newParam;
-							newParam = paramStr.substring(0, namePos + 1) + var.getName();
-							updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
-						} else if (var.getType().getErasure().getQualifiedName().equals(className + "[]")) {
-							String newParam;
-							newParam = paramStr.substring(0, namePos + 1) + var.getName() + "[]";
-							updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
-						}
+					} else if (var.getType().getErasure().getQualifiedName().equals(className + "[]")) {
+						String newParam;
+						newParam = paramStr.substring(0, namePos + 1) + var.getName() + "[]";
+						updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
 					}
 				}
 			}
-		} else { // other types of structures
-			if (baseVar != null) {
+		}
+	}
+
+	/**
+	 * Concretize parameters of type ArrayAccess and update the maps accordingly.
+	 * 
+	 * @param paramStr2Freq - map between parameter string and its frequency.
+	 * @param paramStr2Info - map between parameter string and its detailed information.
+	 * @param freq - frequency of the current parameter
+	 * @param paramInfo - abstract information of the parameter
+	 * @param paramStr - string representation of the parameter
+	 * @param baseVar - base variable of the parameter
+	 */
+	private void concretizeArrayAccess(final Map<String, Double> paramStr2Freq,
+			final Map<String, ParamInfo> paramStr2Info, final Double freq,
+			final ParamInfo paramInfo, final String paramStr, final BaseVariable baseVar) {
+		if (baseVar != null) {
+			if (baseVar.getType() != null 
+					&& baseVar.getType().getErasure().getQualifiedName().equals(paramStr)) {
+				// paramStr = baseVar.getName() + "[]"; // the reuse of paramStr is so confusing!
+				
+				String newParam = baseVar.getName() + "[]";
+				updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
+			} else {
 				return;
 			}
-			updateParamMaps(paramStr, freq, paramInfo, paramStr2Freq, paramStr2Info);
+		} else {
+			for (int j = 0; j < locals.size(); j++) {
+				Name local = locals.get(j);
+				if (local.resolveTypeBinding() == null) {
+					continue;
+				}
+				
+				if (local.resolveTypeBinding().getErasure().getQualifiedName().equals(paramStr)) {
+					if (local instanceof SimpleName) {
+						SimpleName tmp = (SimpleName) local;
+						String newParam;
+						newParam = tmp.getIdentifier() + "[]";
+						
+						updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
+					}
+				}
+			}
+			
+			for (int k = 0; k < hierarchyField.size(); k++) {
+				IVariableBinding var = hierarchyField.get(k);
+				if (var.getType().getErasure().getQualifiedName().equals(paramStr)) {
+					String newParam;
+					newParam = var.getName() + "[]";
+					
+					updateParamMaps(newParam, freq, paramInfo, paramStr2Freq, paramStr2Info);
+				}	
+			}
 		}
 	}
 	
@@ -438,7 +475,7 @@ public class ParamRecommenderWithBN implements IParamRecommender {
 	private List<NodeProbPair> getRankedNodes(
 			final BayesNet net, 
 			final InstanceData id) {
-		// TODO: fow now we do not treat the types of receivers and locals used in the arguments.
+		// TODO: for now we do not treat the types of receivers and locals used in the arguments.
 		String rawF2 = id.getFeature2();
 		List<String> rawLocalCalls = id.getFeature3();
 		List<String> rawRevCalls = id.getFeature7();
@@ -528,6 +565,7 @@ public class ParamRecommenderWithBN implements IParamRecommender {
 	 * @return whether the parameter represents a method invocation
 	 * @deprecated
 	 */
+	@SuppressWarnings("unused")
 	private static boolean isMethodInvocation(final String paramStr) {
 		return paramStr.endsWith(")") || paramStr.endsWith("}");
 	}
@@ -543,6 +581,7 @@ public class ParamRecommenderWithBN implements IParamRecommender {
 	 * @return  whether the parameter represents a field access
 	 * @deprecated
 	 */
+	@SuppressWarnings("unused")
 	private static boolean isFieldAccess(final String paramStr) {
 		boolean isFa = false;
 		

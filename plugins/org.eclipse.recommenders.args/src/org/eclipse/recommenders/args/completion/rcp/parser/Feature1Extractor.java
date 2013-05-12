@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.swt.widgets.Scrollable;
 
 /**
  * This visitor finds out, for each actual parameter, the name of the called method.
@@ -41,6 +42,7 @@ public class Feature1Extractor extends ASTVisitor {
 			result.put(((Expression) o).getStartPosition(), methodName);
 		}
 		
+		Scrollable s;
 		return super.visit(node);
 	}
 

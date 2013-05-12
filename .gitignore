@@ -19,6 +19,3 @@ screenshots/
 *.licensed
 *.aux
 *_trace
-
-/plugins/org.eclipse.recommenders.mining/
-/tests/org.eclipse.recommenders.tests.mining/

@@ -19,6 +19,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.eclipse.recommenders.args.completion.rcp.ParametersPlugin;
+import org.eclipse.swt.widgets.Composite;
 
 /**
  * This class filters out some uninteresting classes (e.g., java.lang.Object and java.util.Map).
@@ -76,6 +77,7 @@ public final class ParameterFilter {
 	 * determine the path of property file which contains configuration items.
 	 */
 	public static void initializePaths() {
+		Composite c;
 		if (pluginPath == null && propertyFilePath == null) {
 			Properties sysProp = System.getProperties();
 			String osName = sysProp.getProperty("os.name");

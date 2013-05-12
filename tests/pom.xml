@@ -10,7 +10,7 @@
 	<artifactId>org.eclipse.recommenders.args.tests.parent</artifactId>
 	<packaging>pom</packaging>
 	<modules>
-		<module>org.eclipse.recommenders.test.args</module>
+		<module>org.eclipse.recommenders.tests.args</module>
 	</modules>
     <profiles>
         <profile>

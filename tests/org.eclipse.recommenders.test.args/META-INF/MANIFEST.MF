@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Args
-Bundle-SymbolicName: org.eclipse.recommenders.test.args; singleton:=true
+Bundle-SymbolicName: org.eclipse.recommenders.tests.args;singleton:=true
 Bundle-Version: 1.0.3.qualifier
 Require-Bundle: org.mockito,
  org.junit4,

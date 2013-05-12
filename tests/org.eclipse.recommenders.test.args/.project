@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>org.eclipse.recommenders.test.args</name>
+	<name>org.eclipse.recommenders.tests.args</name>
 	<comment></comment>
 	<projects>
 	</projects>
-<buildSpec>
+	<buildSpec>
 		<buildCommand>
 			<name>org.eclipse.jdt.core.javabuilder</name>
 			<arguments>
@@ -49,5 +49,4 @@
 		<nature>org.eclipse.xtext.ui.shared.xtextNature</nature>
 		<nature>org.eclipse.pde.api.tools.apiAnalysisNature</nature>
 	</natures>
-
 </projectDescription>
